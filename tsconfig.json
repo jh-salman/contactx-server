@@ -7,10 +7,10 @@
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    "module": "esnext",
+    "module": "ESNext",
     "target": "esnext",
-    "moduleResolution": "bundler",
-    "types": ["node"],
+    "moduleResolution": "node",
+    "types": [],
     // For nodejs:
     // "lib": ["esnext"],
     // "types": ["node"],
@@ -38,8 +38,12 @@
     // "jsx": "react-jsx",
     "verbatimModuleSyntax": false,
     "isolatedModules": true,
+    // "ignoreDeprecations":"6.0",
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-  }
+    "esModuleInterop": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "src/generated"]
 }
