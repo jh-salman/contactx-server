@@ -7,6 +7,8 @@ CREATE TABLE "user" (
     "image" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "phoneNumber" TEXT,
+    "phoneNumberVerified" BOOLEAN,
 
     CONSTRAINT "user_pkey" PRIMARY KEY ("id")
 );
@@ -58,6 +60,9 @@ CREATE TABLE "verification" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "user_email_key" ON "user"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "user_phoneNumber_key" ON "user"("phoneNumber");
 
 -- CreateIndex
 CREATE INDEX "session_userId_idx" ON "session"("userId");
