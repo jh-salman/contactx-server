@@ -6,19 +6,27 @@ export const trackScanAndFetchCard = async (
     ip?: string;
     userAgent?: string;
     source?: "qr" | "link";
+    latitude?: number;
+    longitude?: number;
+    city?: string;
+    country?: string;
   }
 ) => {
-  // 1️⃣ Scan track করা
+  // 1️⃣ Scan track + location save
   await prisma.cardScan.create({
     data: {
       cardId,
       ip: meta.ip,
       userAgent: meta.userAgent,
       source: meta.source ?? "qr",
+      latitude: meta.latitude,
+      longitude: meta.longitude,
+      city: meta.city,
+      country: meta.country,
     },
   });
 
-  // 2️⃣ Card fetch করা
+  // 2️⃣ Card fetch
   const card = await prisma.card.findUnique({
     where: { id: cardId },
     include: {
