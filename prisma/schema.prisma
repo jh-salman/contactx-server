@@ -19,6 +19,10 @@ model User {
   email         String
   emailVerified Boolean   @default(false)
   image         String?
+  cards         Card[]
+  contacts      Contact[]
+
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
@@ -78,4 +82,98 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+model Card {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardTitle  String @default("ConactX")
+  cardColor  String   @default("black")
+  logo       String?
+  profile    String?
+  cover      String?
+  imagesAndLayouts Json?
+  isFavorite Boolean  @default(false)
+  personalInfo   personalInfo?
+  socialLinks   socialLinks?
+  qrCode      String?
+  qrImage     String?
+  scan        cardScan[]
+  contacts    Contact[]
+  setting    Json?
+
+
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@map("cards")
+}
+
+model personalInfo {
+  id            String @id @default(cuid())
+  cardId        String @unique
+  card          Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  firstName     String
+  lastName      String
+  jobTitle      String
+
+  @@index([cardId])
+  @@map("personal_info")
+}
+
+model socialLinks {
+  id        String @id @default(cuid())
+  cardId    String @unique
+  card      Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  links     Json[]
+
+  @@index([cardId])
+  @@map("social_links")
+}
+
+model cardScan {
+  id        String   @id @default(cuid())
+  cardId    String
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  ip        String?
+  userAgent String?
+  source    String   @default("qr") // "qr" | "link"
+  latitude  Float?
+  longitude Float?
+  city      String?
+  country   String?
+
+
+  createdAt DateTime @default(now())
+
+  @@index([cardId])
+  @@map("card_scans")
+}
+
+model Contact {
+  id         String   @id @default(cuid())
+  userId     String   // card owner
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardId     String   // যেই কার্ডকে contact করা হলো
+  card       Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  
+  firstName  String
+  lastName   String
+  phone      String
+  email      String?
+  company    String?
+  jobTitle   String?
+  
+  latitude   Float?  // Optional location
+  longitude  Float?
+  city       String?
+  country    String?
+
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([cardId])
+  @@map("contacts")
 }

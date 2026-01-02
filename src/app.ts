@@ -1,9 +1,12 @@
 import express, { Application, Request, Response } from "express"
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth";
-import { authRoutes } from "./modules/auth/auth.routes";
 import cors from "cors";
 import { requireAuth } from "./middlewere/requireAuth";
+import { cardRoutes } from "./modules/cards/card.routes";
+import { globalErrorHandler } from "./middlewere/globalErrorHandler";
+import { publicCardRoutes } from "./modules/publicCard/publicCard.routes";
+import { scanRoutes } from "./modules/analytics/scan.routes";
 
 
 export const app:Application= express();
@@ -26,4 +29,20 @@ app.get('/api/protected', requireAuth, (req: Request, res: Response) => {
     });
   });
 
-app.use("/api/auth", authRoutes);
+app.use("/api/card", requireAuth,cardRoutes);
+
+
+
+// public card routes 
+
+app.use("/api/public-card", publicCardRoutes);
+
+app.use("/api/scan", scanRoutes);
+
+
+//global error handler must be the last middleare
+
+app.use(globalErrorHandler);
+
+
+
