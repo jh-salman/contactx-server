@@ -8,6 +8,7 @@ import { globalErrorHandler } from "./middlewere/globalErrorHandler";
 import { publicCardRoutes } from "./modules/publicCard/publicCard.routes";
 import { scanRoutes } from "./modules/analytics/scan.routes";
 import { contactRoutes } from "./modules/contacts/contacts.routes";
+import { notFoundRoute } from "./middlewere/notFoundRoute";
 
 
 export const app:Application= express();
@@ -46,6 +47,7 @@ app.use("/api/contacts", requireAuth,  contactRoutes);
 
 
 //global error handler must be the last middleare
+app.use(notFoundRoute)
 
 app.use(globalErrorHandler);
 
