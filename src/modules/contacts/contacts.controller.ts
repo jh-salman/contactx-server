@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
 import { contactServices } from "./contacts.services";
-
+import { getLocationFromIP } from "../../lib/ipGeolocation"; // Add this import
 
 const saveContactController = async (req: Request, res: Response, next: any) => {
     try {
         const userId = req.user?.id as string | undefined;
         const { cardId } = req.params as { cardId?: string };
-        const contactData = req.body;
+        let contactData = req.body; // Changed to let so we can modify it
 
         // 1️⃣ Auth check
         if (!userId) {
@@ -27,7 +27,29 @@ const saveContactController = async (req: Request, res: Response, next: any) => 
             });
         }
 
-        // 4️⃣ Save contact with all prevents inside service
+        // 4️⃣ Get IP address for location detection
+        const ip = req.ip || 
+                   (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+                   req.socket.remoteAddress ||
+                   '';
+
+        // 5️⃣ Get location from IP if not provided in contactData
+        if (ip && (!contactData.latitude || !contactData.city)) {
+            const ipLocation = await getLocationFromIP(ip);
+            
+            if (ipLocation) {
+                // Add location to contact data (prefer provided, fallback to IP)
+                contactData = {
+                    ...contactData,
+                    latitude: contactData.latitude ?? ipLocation.latitude,
+                    longitude: contactData.longitude ?? ipLocation.longitude,
+                    city: contactData.city ?? ipLocation.city,
+                    country: contactData.country ?? ipLocation.country,
+                };
+            }
+        }
+
+        // 6️⃣ Save contact with all prevents inside service
         const result = await contactServices.saveContact(userId, cardId, contactData);
 
         if (result.alreadySaved) {
@@ -44,7 +66,7 @@ const saveContactController = async (req: Request, res: Response, next: any) => 
             data: result.contact,
         });
     } catch (error: any) {
-        // 5️⃣ Prevent "headers already sent" error
+        // 7️⃣ Prevent "headers already sent" error
         if (!res.headersSent) {
             return res.status(400).json({
                 success: false,
@@ -55,21 +77,52 @@ const saveContactController = async (req: Request, res: Response, next: any) => 
         console.error("Unhandled error after response:", error);
     }
 };
+
 const getAllContactsController = async (req: Request, res: Response, next: any) => {
     try {
         const userId = req.user?.id as string;
         const contacts = await contactServices.getAllContacts(userId);
-        res.status(200).json({ success: true, data: contacts });
+        
+        // Check if headers already sent before responding
+        if (!res.headersSent) {
+            res.status(200).json({ success: true, data: contacts });
+        }
     } catch (error: any) {
-        next(error);
+        // Only call next if headers haven't been sent
+        if (!res.headersSent) {
+            next(error);
+        } else {
+            console.error("Error after response sent:", error);
+        }
     }
 };
 
 const updateContactController = async (req: Request, res: Response, next: any) => {
     try {
         const userId = req.user?.id as string;
-        const { contactId } = req.params;
-        const updateData = req.body;
+        const { contactId } = req.params as { contactId: string };
+        let updateData = req.body; // Changed to let so we can modify it
+
+        // Optional: Get location from IP if updating location fields
+        const ip = req.ip || 
+                   (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+                   req.socket.remoteAddress ||
+                   '';
+
+        // If updating location and IP available, add location from IP
+        if (ip && (!updateData.latitude || !updateData.city)) {
+            const ipLocation = await getLocationFromIP(ip);
+            
+            if (ipLocation) {
+                updateData = {
+                    ...updateData,
+                    latitude: updateData.latitude ?? ipLocation.latitude,
+                    longitude: updateData.longitude ?? ipLocation.longitude,
+                    city: updateData.city ?? ipLocation.city,
+                    country: updateData.country ?? ipLocation.country,
+                };
+            }
+        }
 
         const updated = await contactServices.updateContact(contactId, userId, updateData);
 
@@ -86,7 +139,6 @@ const updateContactController = async (req: Request, res: Response, next: any) =
     }
 };
 
-
 const deleteContactController = async (req: Request, res: Response, next: any) => {
     try {
         const userId = req.user?.id as string;
@@ -100,4 +152,9 @@ const deleteContactController = async (req: Request, res: Response, next: any) =
     }
 };
 
-export const contactController = { saveContactController, getAllContactsController, updateContactController, deleteContactController };
+export const contactController = { 
+    saveContactController, 
+    getAllContactsController, 
+    updateContactController, 
+    deleteContactController 
+};

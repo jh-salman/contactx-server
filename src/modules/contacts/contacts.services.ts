@@ -59,7 +59,7 @@ const saveContact = async (
             cardId,
             firstName: data.firstName ?? "",
             lastName: data.lastName ?? "",
-            phone: data.phone ?? "",   // এখানে empty string দিলে null/undefined সমস্যা থাকবে না
+            phone: data.phone ?? "",
             email: data.email ?? "",
             company: data.company ?? "",
             jobTitle: data.jobTitle ?? "",
@@ -68,8 +68,9 @@ const saveContact = async (
             banner: data.banner ?? "",
             note: data.note ?? "",
             profile_img: data.profile_img ?? "",
-            latitude: data.latitude ?? 0,
-            longitude: data.longitude ?? 0,
+            // Use null instead of 0 for location fields (0 is a valid coordinate)
+            latitude: data.latitude ?? null,
+            longitude: data.longitude ?? null,
             city: data.city ?? "",
             country: data.country ?? "",
         },
@@ -86,8 +87,8 @@ const getAllContacts = async (userId: string) => {
         orderBy: { createdAt: "desc" },
     });
 
-    if (!contacts || contacts.length === 0) throw new Error("No contacts found");
-    return contacts;
+    // Return empty array if no contacts found (this is a valid state)
+    return contacts || [];
 };
 
 const updateContact = async (
@@ -122,12 +123,32 @@ const updateContact = async (
         return existing;
     }
 
+    // Prepare update data - only include fields that are provided
+    const updateData: any = {};
+    
+    if (data.firstName !== undefined) updateData.firstName = data.firstName;
+    if (data.lastName !== undefined) updateData.lastName = data.lastName;
+    if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.company !== undefined) updateData.company = data.company;
+    if (data.jobTitle !== undefined) updateData.jobTitle = data.jobTitle;
+    if (data.image !== undefined) updateData.image = data.image;
+    if (data.logo !== undefined) updateData.logo = data.logo;
+    if (data.banner !== undefined) updateData.banner = data.banner;
+    if (data.note !== undefined) updateData.note = data.note;
+    if (data.profile_img !== undefined) updateData.profile_img = data.profile_img;
+    
+    // Handle location fields - allow null values
+    if (data.latitude !== undefined) updateData.latitude = data.latitude;
+    if (data.longitude !== undefined) updateData.longitude = data.longitude;
+    if (data.city !== undefined) updateData.city = data.city;
+    if (data.country !== undefined) updateData.country = data.country;
+
     return prisma.contact.update({
         where: { id: contactId },
-        data,
+        data: updateData,
     });
 };
-
 
 const deleteContact = async (contactId: string, userId: string) => {
     if (!contactId) {
@@ -169,4 +190,9 @@ const deleteContact = async (contactId: string, userId: string) => {
     };
 };
 
-export const contactServices = { saveContact, getAllContacts, updateContact, deleteContact };
+export const contactServices = { 
+    saveContact, 
+    getAllContacts, 
+    updateContact, 
+    deleteContact 
+};
