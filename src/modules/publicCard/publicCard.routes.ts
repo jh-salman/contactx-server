@@ -5,7 +5,4 @@ const router = Router();
 
 router.get("/:id", publicCardController.getPublicCardController);
 
-
-
-
 export const publicCardRoutes = router;

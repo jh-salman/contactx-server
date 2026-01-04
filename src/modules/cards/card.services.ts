@@ -1,6 +1,7 @@
+import { Card } from "../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
 import { generateQRCode } from "../../lib/qr";
-
+// import { Card } from "@prisma/client";
 
 const createCard = async (
     userId: string,
@@ -59,34 +60,29 @@ const createCard = async (
 
 // Get all card 
 
-const getAllCard = async (userId: string) => {
-
-
+const getAllCard = async (userId: string): Promise<Card[]> => {
     if (!userId) {
         throw new Error("userId is required");
     }
 
-
-    const result = await prisma.card.findMany({
+    const cards = await prisma.card.findMany({
         where: { userId },
         include: {
             personalInfo: true,
             socialLinks: true,
         },
         orderBy: {
-            createdAt: "desc"
-        }
+            createdAt: "desc",
+        },
+    });
 
-    })
-
-    if (result.length === 0) {
-        throw new Error("No card found for this user");
+    // optional: return empty array instead of throwing
+    if (!cards || cards.length === 0) {
+        return []; // safer for frontend
     }
 
-    return result;
-}
-
-
+    return cards;
+};
 
 
 /// update signle card

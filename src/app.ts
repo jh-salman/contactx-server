@@ -13,7 +13,35 @@ import { notFoundRoute } from "./middlewere/notFoundRoute";
 
 export const app:Application= express();
 app.use(express.json());
-app.use(cors());
+
+// আপনার backend এ (app.ts বা server.ts)
+app.use(cors({
+  origin: ['http://localhost:8081', 'exp://10.26.38.18:8081', 'http://10.26.38.18:3004','http://localhost:3004'], // Expo dev server
+  credentials: true
+}));
+
+// Add middleware to normalize and log origin headers for debugging
+app.use('/api/auth', (req, res, next) => {
+    const origin = req.headers.origin || req.headers['x-origin'] || req.headers.referer;
+    
+    // Normalize origin header - ensure it matches trusted origins format
+    if (origin && typeof origin === 'string') {
+        // Remove trailing slash if present
+        const normalizedOrigin = origin.replace(/\/$/, '');
+        // Set normalized origin back to headers
+        req.headers.origin = normalizedOrigin;
+    }
+    
+    console.log('🔍 Auth Request Origin:', {
+        'original-origin': req.headers.origin,
+        'normalized-origin': origin ? (origin as string).replace(/\/$/, '') : null,
+        'x-origin': req.headers['x-origin'],
+        referer: req.headers.referer,
+        'user-agent': req.headers['user-agent'],
+        url: req.url,
+    });
+    next();
+});
 
 app.all('/api/auth/*splat', toNodeHandler(auth));
 
