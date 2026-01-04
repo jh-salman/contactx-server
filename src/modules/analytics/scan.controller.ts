@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { scanServices } from "./scan.services";
+import { getClientIP } from "../../lib/getClientIP";
+
 
 const trackScanController = async (req: Request, res: Response, next: any) => {
   try {
@@ -9,11 +11,9 @@ const trackScanController = async (req: Request, res: Response, next: any) => {
       return res.status(400).json({ success: false, message: "Card ID is required" });
     }
 
-    // Get IP address (handle proxy/load balancer)
-    const ip = req.ip || 
-               (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-               req.socket.remoteAddress ||
-               '';
+    // Smart IP detection - works in dev and production
+    const ip = getClientIP(req);
+    console.log('🌐 Client IP detected:', ip);
 
     // Request meta info
     const meta = {
@@ -33,9 +33,9 @@ const trackScanController = async (req: Request, res: Response, next: any) => {
       longitude?: number;
       city?: string;
       country?: string;
-    };
+    }
 
-    // Scan track + card fetch (location will be auto-detected from IP if not provided)
+    // Scan track + card fetch (location will be auto-detected from IP)
     const card = await scanServices.trackScanAndFetchCard(cardId, meta);
 
     res.status(200).json({
@@ -44,6 +44,7 @@ const trackScanController = async (req: Request, res: Response, next: any) => {
       data: card,
     });
   } catch (error: any) {
+    console.error('❌ Scan controller error:', error);
     next(error);
   }
 };

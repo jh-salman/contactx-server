@@ -12,10 +12,27 @@ const createCard = async (
     cover?: string,
     imagesAndLayouts?: any,
     isFavorite?: boolean,
-    personalInfo?: { firstName: string; lastName: string; jobTitle: string },
+    personalInfo?: {
+        firstName?: string;
+        lastName?: string;
+        jobTitle?: string;
+        phoneNumber: string; // Required
+        email?: string;
+        company?: string;
+        image?: string;
+        logo?: string;
+        note?: string;
+        banner?: string;
+        profile_img?: string;
+    },
     socialLinks?: any[]
 ) => {
     if (!userId) throw new Error("userId is required");
+
+    // Validate phoneNumber is provided if personalInfo exists
+    if (personalInfo && !personalInfo.phoneNumber) {
+        throw new Error("phoneNumber is required in personalInfo");
+    }
 
     // 1️⃣ Create the card first
     const card = await prisma.card.create({
@@ -30,7 +47,23 @@ const createCard = async (
             qrImage: null,
             imagesAndLayouts,
             isFavorite: isFavorite ?? false,
-            ...(personalInfo && { personalInfo: { create: personalInfo } }),
+            ...(personalInfo && {
+                personalInfo: {
+                    create: {
+                        firstName: personalInfo.firstName ?? null,
+                        lastName: personalInfo.lastName ?? null,
+                        jobTitle: personalInfo.jobTitle ?? null,
+                        phoneNumber: personalInfo.phoneNumber,
+                        email: personalInfo.email ?? null,
+                        company: personalInfo.company ?? null,
+                        image: personalInfo.image ?? null,
+                        logo: personalInfo.logo ?? null,
+                        note: personalInfo.note ?? null,
+                        banner: personalInfo.banner ?? null,
+                        profile_img: personalInfo.profile_img ?? null,
+                    },
+                },
+            }),
             ...(socialLinks && socialLinks.length > 0
                 ? { socialLinks: { create: { links: socialLinks.slice(0, 5) } } }
                 : {}),
@@ -70,6 +103,7 @@ const getAllCard = async (userId: string): Promise<Card[]> => {
         include: {
             personalInfo: true,
             socialLinks: true,
+            contacts:true
         },
         orderBy: {
             createdAt: "desc",
@@ -99,9 +133,17 @@ const updateCard = async (
         isFavorite?: boolean;
         qrCode?: string | null;
         personalInfo?: {
-            firstName: string;
-            lastName: string;
-            jobTitle: string;
+            firstName?: string;
+            lastName?: string;
+            jobTitle?: string;
+            phoneNumber?: string;
+            email?: string;
+            company?: string;
+            image?: string;
+            logo?: string;
+            note?: string;
+            banner?: string;
+            profile_img?: string;
         };
         socialLinks?: any[];
     }
@@ -117,6 +159,15 @@ const updateCard = async (
 
     if (!existing) {
         throw new Error("Card not found or unauthorized");
+    }
+
+    // Check if personalInfo exists - if not, phoneNumber is required for create
+    const existingPersonalInfo = await prisma.personalInfo.findUnique({
+        where: { cardId },
+    });
+
+    if (payload.personalInfo && !existingPersonalInfo && !payload.personalInfo.phoneNumber) {
+        throw new Error("phoneNumber is required when creating personalInfo");
     }
 
     const updated = await prisma.card.update({
@@ -141,8 +192,32 @@ const updateCard = async (
             ...(payload.personalInfo && {
                 personalInfo: {
                     upsert: {
-                        create: payload.personalInfo,
-                        update: payload.personalInfo,
+                        create: {
+                            firstName: payload.personalInfo.firstName ?? null,
+                            lastName: payload.personalInfo.lastName ?? null,
+                            jobTitle: payload.personalInfo.jobTitle ?? null,
+                            phoneNumber: payload.personalInfo.phoneNumber!, // Already validated above
+                            email: payload.personalInfo.email ?? null,
+                            company: payload.personalInfo.company ?? null,
+                            image: payload.personalInfo.image ?? null,
+                            logo: payload.personalInfo.logo ?? null,
+                            note: payload.personalInfo.note ?? null,
+                            banner: payload.personalInfo.banner ?? null,
+                            profile_img: payload.personalInfo.profile_img ?? null,
+                        },
+                        update: {
+                            ...(payload.personalInfo.firstName !== undefined && { firstName: payload.personalInfo.firstName }),
+                            ...(payload.personalInfo.lastName !== undefined && { lastName: payload.personalInfo.lastName }),
+                            ...(payload.personalInfo.jobTitle !== undefined && { jobTitle: payload.personalInfo.jobTitle }),
+                            ...(payload.personalInfo.phoneNumber !== undefined && { phoneNumber: payload.personalInfo.phoneNumber }),
+                            ...(payload.personalInfo.email !== undefined && { email: payload.personalInfo.email }),
+                            ...(payload.personalInfo.company !== undefined && { company: payload.personalInfo.company }),
+                            ...(payload.personalInfo.image !== undefined && { image: payload.personalInfo.image }),
+                            ...(payload.personalInfo.logo !== undefined && { logo: payload.personalInfo.logo }),
+                            ...(payload.personalInfo.note !== undefined && { note: payload.personalInfo.note }),
+                            ...(payload.personalInfo.banner !== undefined && { banner: payload.personalInfo.banner }),
+                            ...(payload.personalInfo.profile_img !== undefined && { profile_img: payload.personalInfo.profile_img }),
+                        },
                     },
                 },
             }),

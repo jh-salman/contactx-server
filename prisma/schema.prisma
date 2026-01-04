@@ -21,6 +21,8 @@ model User {
   image         String?
   cards         Card[]
   contacts      Contact[]
+  sentRequests  PermissionRequest[] @relation("SentRequests")
+  receivedRequests PermissionRequest[] @relation("ReceivedRequests")
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -94,12 +96,13 @@ model Card {
   cover            String?
   imagesAndLayouts Json?
   isFavorite       Boolean       @default(false)
-  personalInfo     personalInfo?
+  personalInfo     PersonalInfo?
   socialLinks      socialLinks?
   qrCode           String?
   qrImage          String?
   scan             cardScan[]
   contacts         Contact[]
+  permissionRequests PermissionRequest[]
   setting          Json?
 
   createdAt DateTime @default(now())
@@ -109,13 +112,21 @@ model Card {
   @@map("cards")
 }
 
-model personalInfo {
-  id        String @id @default(cuid())
-  cardId    String @unique
-  card      Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  firstName String
-  lastName  String
-  jobTitle  String
+model PersonalInfo {
+  id          String  @id @default(cuid())
+  cardId      String  @unique
+  card        Card    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  firstName   String?
+  lastName    String?
+  jobTitle    String?
+  phoneNumber String  @unique
+  email       String? @unique
+  company     String?
+  image       String?
+  logo        String?
+  note        String?
+  banner      String?
+  profile_img String?
 
   @@index([cardId])
   @@map("personal_info")
@@ -132,16 +143,18 @@ model socialLinks {
 }
 
 model cardScan {
-  id        String  @id @default(cuid())
-  cardId    String
-  card      Card    @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  ip        String?
-  userAgent String?
-  source    String  @default("qr") // "qr" | "link"
-  latitude  Float?
-  longitude Float?
-  city      String?
-  country   String?
+  id          String  @id @default(cuid())
+  cardId      String
+  card        Card    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  ip          String?
+  userAgent   String?
+  source      String  @default("qr") // "qr" | "link"
+  latitude    Float?
+  longitude   Float?
+  city        String?
+  country     String?
+  banner      String?
+  profile_img String?
 
   createdAt DateTime @default(now())
 
@@ -162,10 +175,10 @@ model Contact {
   email       String?
   company     String?
   jobTitle    String?
-  image       String?
+
   logo        String?
   note        String?
-  banner      String?
+
   profile_img String?
 
   latitude  Float? // Optional location
@@ -178,4 +191,25 @@ model Contact {
   @@index([userId])
   @@index([cardId])
   @@map("contacts")
+}
+
+model PermissionRequest {
+  id          String   @id @default(cuid())
+  requesterId String   // Owner who wants to save contact
+  requester   User     @relation("SentRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+  cardId      String   // Customer's card
+  card        Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  cardOwnerId String   // Customer (card owner)
+  cardOwner   User     @relation("ReceivedRequests", fields: [cardOwnerId], references: [id], onDelete: Cascade)
+  status      String   @default("pending") // "pending" | "approved" | "rejected"
+  message     String?  // Optional message from requester
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([requesterId])
+  @@index([cardOwnerId])
+  @@index([cardId])
+  @@index([status])
+  @@map("permission_requests")
 }

@@ -27,6 +27,8 @@ const createCard = async (
       
     } = req.body;
 
+    // Extract links array from socialLinks object if it exists
+    const socialLinksArray = socialLinks?.links || (Array.isArray(socialLinks) ? socialLinks : undefined);
 
     const result = await cardServices.createCard(
       userId,
@@ -38,7 +40,7 @@ const createCard = async (
       imagesAndLayouts,
       isFavorite,
       personalInfo,
-      socialLinks,
+      socialLinksArray,
       
     );
 
@@ -71,8 +73,14 @@ const updateCard = async (req: Request, res: Response, next: any) => {
     }
 
     const { id } = req.params as { id: string };
+    
+    // Extract links array from socialLinks object if it exists
+    const payload = { ...req.body };
+    if (payload.socialLinks?.links) {
+      payload.socialLinks = payload.socialLinks.links;
+    }
 
-    const result = await cardServices.updateCard(id, req.user.id, req.body);
+    const result = await cardServices.updateCard(id, req.user.id, payload);
 
     res.status(200).json({
       success: true,
