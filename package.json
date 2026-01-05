@@ -5,14 +5,15 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jh-salman/contactx-server.git"
   },
   "keywords": [],
-  "type": "module",
+
   "author": "",
   "license": "ISC",
   "bugs": {

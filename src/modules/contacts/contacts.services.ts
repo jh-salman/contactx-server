@@ -3,21 +3,21 @@ import { prisma } from "../../lib/prisma";
 // Helper function to validate and normalize email
 const normalizeEmail = (email: string | undefined): string => {
     if (!email) return "";
-    
+
     // Trim whitespace
     const trimmed = email.trim();
-    
+
     // If empty after trimming, return empty string
     if (!trimmed) return "";
-    
+
     // Basic email validation regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
+
     // Validate email format
     if (!emailRegex.test(trimmed)) {
         throw new Error("Invalid email format");
     }
-    
+
     // Convert to lowercase for consistency
     return trimmed.toLowerCase();
 };
@@ -123,7 +123,7 @@ const saveContact = async (
             const ownerName = ownerPersonalInfo
                 ? `${ownerPersonalInfo.firstName || ''} ${ownerPersonalInfo.lastName || ''}`.trim() || 'Someone'
                 : 'Someone';
-            
+
             // Create reverse request (don't throw error if it fails - just log it)
             await createReversePermissionRequest(
                 cardId, // owner's card ID
@@ -184,7 +184,7 @@ const updateContact = async (
 
     // Prepare update data - only include fields that are provided
     const updateData: any = {};
-    
+
     if (data.firstName !== undefined) updateData.firstName = data.firstName;
     if (data.lastName !== undefined) updateData.lastName = data.lastName;
     if (data.phone !== undefined) updateData.phone = data.phone;
@@ -208,7 +208,7 @@ const updateContact = async (
     if (data.logo !== undefined) updateData.logo = data.logo;
     if (data.note !== undefined) updateData.note = data.note;
     if (data.profile_img !== undefined) updateData.profile_img = data.profile_img;
-    
+
     // Handle location fields - allow null values
     if (data.latitude !== undefined) updateData.latitude = data.latitude;
     if (data.longitude !== undefined) updateData.longitude = data.longitude;
@@ -278,8 +278,11 @@ const requestContactPermission = async (
     // 1️⃣ Check card exists
     const card = await prisma.card.findUnique({
         where: { id: cardId },
-        include: { personalInfo: true },
-        select: { id: true, userId: true, personalInfo: true },
+        select: {
+            id: true,
+            userId: true,
+            personalInfo: true,
+        },
     });
     if (!card) throw new Error("Card not found");
 
@@ -660,10 +663,10 @@ const createReversePermissionRequest = async (
     return request;
 };
 
-export const contactServices = { 
-    saveContact, 
-    getAllContacts, 
-    updateContact, 
+export const contactServices = {
+    saveContact,
+    getAllContacts,
+    updateContact,
     deleteContact,
     requestContactPermission,
     getReceivedRequests,
