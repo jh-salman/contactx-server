@@ -111,6 +111,32 @@ const saveContact = async (
         },
     });
 
+    // 8️⃣ Create reverse permission request if flag is set
+    // This allows owner to save customer's contact (if customer approves)
+    if ((data as any).requestReversePermission && (data as any).customerCardId) {
+        try {
+            const customerCardId = (data as any).customerCardId;
+            // Get owner's name for message
+            const ownerPersonalInfo = await prisma.personalInfo.findUnique({
+                where: { cardId },
+            });
+            const ownerName = ownerPersonalInfo
+                ? `${ownerPersonalInfo.firstName || ''} ${ownerPersonalInfo.lastName || ''}`.trim() || 'Someone'
+                : 'Someone';
+            
+            // Create reverse request (don't throw error if it fails - just log it)
+            await createReversePermissionRequest(
+                cardId, // owner's card ID
+                customerCardId, // customer's card ID
+                `${ownerName} wants to save your contact info`
+            );
+            console.log('✅ Reverse permission request created automatically');
+        } catch (error: any) {
+            // Don't fail the contact save if reverse request fails
+            console.error('⚠️ Failed to create reverse permission request:', error.message);
+        }
+    }
+
     return { alreadySaved: false, contact };
 };
 
@@ -436,6 +462,56 @@ const approveRequest = async (requestId: string, cardOwnerId: string) => {
         return { contact: existingContact, alreadyExists: true };
     }
 
+    // 6️⃣ Get scan location from customer's contact (where they saved owner's card)
+    // Find customer's contact where they saved the owner's card
+    // This contact will have the scan location from when customer scanned owner's QR code
+    let scanLocation: {
+        latitude: number | null;
+        longitude: number | null;
+        city: string;
+        country: string;
+    } = {
+        latitude: null,
+        longitude: null,
+        city: "",
+        country: "",
+    };
+
+    try {
+        // Find all cards owned by the requester (owner)
+        const ownerCards = await prisma.card.findMany({
+            where: { userId: request.requesterId },
+            select: { id: true },
+        });
+
+        // Find customer's contact where they saved owner's card
+        // This contact will have the scan location
+        if (ownerCards.length > 0) {
+            const ownerCardIds = ownerCards.map(card => card.id);
+            const customerContact = await prisma.contact.findFirst({
+                where: {
+                    userId: request.cardOwnerId, // Customer's userId
+                    cardId: { in: ownerCardIds }, // Owner's card ID
+                },
+                orderBy: { createdAt: "desc" }, // Get the most recent one
+            });
+
+            if (customerContact) {
+                // Use the same location from customer's contact
+                scanLocation = {
+                    latitude: customerContact.latitude,
+                    longitude: customerContact.longitude,
+                    city: customerContact.city || "",
+                    country: customerContact.country || "",
+                };
+                console.log('📍 Using scan location from customer contact:', scanLocation);
+            }
+        }
+    } catch (error: any) {
+        console.error('⚠️ Could not get scan location from customer contact:', error.message);
+        // Continue without location - will use fallback or null
+    }
+
     // Create contact
     // Normalize email if provided, handle errors gracefully
     let normalizedEmail = "";
@@ -460,7 +536,11 @@ const approveRequest = async (requestId: string, cardOwnerId: string) => {
             jobTitle: personalInfo.jobTitle || "",
             logo: request.card.logo || "",
             profile_img: request.card.profile || "",
-            // Location can be added later or from scan
+            // Use the same scan location from customer's contact
+            latitude: scanLocation.latitude,
+            longitude: scanLocation.longitude,
+            city: scanLocation.city,
+            country: scanLocation.country,
         },
     });
 
@@ -502,6 +582,84 @@ const rejectRequest = async (requestId: string, cardOwnerId: string) => {
     return updated;
 };
 
+// Create reverse permission request: When customer saves owner's contact,
+// automatically create a request from owner to customer
+const createReversePermissionRequest = async (
+    ownerCardId: string,
+    customerCardId: string,
+    message?: string
+) => {
+    if (!ownerCardId) throw new Error("Owner card ID is required");
+    if (!customerCardId) throw new Error("Customer card ID is required");
+
+    // Check if permissionRequest model is available in Prisma client
+    if (!prisma.permissionRequest) {
+        throw new Error("PermissionRequest model not found. Please run 'npx prisma generate' to regenerate Prisma client.");
+    }
+
+    // 1️⃣ Get owner's card to find owner's userId
+    const ownerCard = await prisma.card.findUnique({
+        where: { id: ownerCardId },
+        include: { personalInfo: true },
+    });
+    if (!ownerCard) throw new Error("Owner card not found");
+
+    // 2️⃣ Get customer's card to find customer's userId
+    const customerCard = await prisma.card.findUnique({
+        where: { id: customerCardId },
+        select: { id: true, userId: true },
+    });
+    if (!customerCard) throw new Error("Customer card not found");
+
+    // 3️⃣ Prevent self-request
+    if (ownerCard.userId === customerCard.userId) {
+        throw new Error("Cannot create reverse request for same user");
+    }
+
+    // 4️⃣ Check if already requested
+    const existingRequest = await prisma.permissionRequest.findFirst({
+        where: {
+            requesterId: ownerCard.userId, // Owner requesting
+            cardId: customerCardId, // Customer's card
+            status: "pending",
+        },
+    });
+
+    if (existingRequest) {
+        // Request already exists, return it
+        return existingRequest;
+    }
+
+    // 5️⃣ Get owner's name for message
+    const ownerName = ownerCard.personalInfo
+        ? `${ownerCard.personalInfo.firstName || ''} ${ownerCard.personalInfo.lastName || ''}`.trim() || 'Someone'
+        : 'Someone';
+
+    // 6️⃣ Create reverse permission request
+    // FROM owner TO customer
+    const request = await prisma.permissionRequest.create({
+        data: {
+            requesterId: ownerCard.userId, // Owner's userId
+            cardId: customerCardId, // Customer's card ID
+            cardOwnerId: customerCard.userId, // Customer's userId
+            message: message || `${ownerName} wants to save your contact info`,
+            status: "pending",
+        },
+        include: {
+            requester: {
+                select: { id: true, name: true, email: true, image: true },
+            },
+            card: {
+                include: {
+                    personalInfo: true,
+                },
+            },
+        },
+    });
+
+    return request;
+};
+
 export const contactServices = { 
     saveContact, 
     getAllContacts, 
@@ -512,4 +670,5 @@ export const contactServices = {
     getSentRequests,
     approveRequest,
     rejectRequest,
+    createReversePermissionRequest,
 };

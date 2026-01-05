@@ -31,4 +31,8 @@ router.post("/requests/:requestId/approve", contactController.approveRequestCont
 // POST /contacts/requests/:requestId/reject - Reject request (Customer rejects)
 router.post("/requests/:requestId/reject", contactController.rejectRequestController);
 
+// POST /contacts/request-reverse - Create reverse permission request
+// When customer saves owner's contact, automatically create request from owner to customer
+router.post("/request-reverse", contactController.createReversePermissionRequestController);
+
 export const contactRoutes = router;

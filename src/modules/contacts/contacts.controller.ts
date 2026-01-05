@@ -331,6 +331,46 @@ const rejectRequestController = async (req: Request, res: Response, next: any) =
     }
 };
 
+// Create reverse permission request controller
+const createReversePermissionRequestController = async (req: Request, res: Response, next: any) => {
+    try {
+        const { ownerCardId, customerCardId, message } = req.body as {
+            ownerCardId?: string;
+            customerCardId?: string;
+            message?: string;
+        };
+
+        if (!ownerCardId) {
+            return res.status(400).json({ success: false, message: "Owner card ID is required" });
+        }
+
+        if (!customerCardId) {
+            return res.status(400).json({ success: false, message: "Customer card ID is required" });
+        }
+
+        const request = await contactServices.createReversePermissionRequest(
+            ownerCardId,
+            customerCardId,
+            message
+        );
+
+        res.status(201).json({
+            success: true,
+            message: "Reverse permission request created successfully",
+            data: request,
+        });
+    } catch (error: any) {
+        console.error('❌ Create reverse permission request error:', error);
+        if (!res.headersSent) {
+            return res.status(400).json({
+                success: false,
+                message: error.message || "Something went wrong",
+            });
+        }
+        next(error);
+    }
+};
+
 export const contactController = { 
     saveContactController, 
     getAllContactsController, 
@@ -341,4 +381,5 @@ export const contactController = {
     getSentRequestsController,
     approveRequestController,
     rejectRequestController,
+    createReversePermissionRequestController,
 };
