@@ -1,0 +1,1 @@
+{"version":3,"file":"notFoundRoute.js","sourceRoot":"","sources":["../../../src/middlewere/notFoundRoute.ts"],"names":[],"mappings":"AAEA,MAAM,CAAC,MAAM,aAAa,GAAG,CAAC,GAAY,EAAE,GAAa,EAAE,EAAE;IAC3D,GAAG,CAAC,MAAM,CAAC,GAAG,CAAC,CAAC,IAAI,CAAC;QACnB,OAAO,EAAE,KAAK;QACd,OAAO,EAAE,SAAS,GAAG,CAAC,WAAW,YAAY;KAC9C,CAAC,CAAC;AACL,CAAC,CAAC"}

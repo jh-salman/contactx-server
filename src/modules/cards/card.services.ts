@@ -128,7 +128,7 @@ const updateCard = async (
             ...(payload.logo !== undefined && { logo: payload.logo }),
             ...(payload.profile !== undefined && { profile: payload.profile }),
             ...(payload.cover !== undefined && { cover: payload.cover }),
-            ...(payload.qrCode !== undefined && { qrCode: payload.qrCode }),
+           
 
             ...(payload.imagesAndLayouts !== undefined && {
                 imagesAndLayouts: payload.imagesAndLayouts,

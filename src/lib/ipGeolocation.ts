@@ -19,18 +19,19 @@ const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 export const getLocationFromIP = async (ip: string): Promise<LocationData | null> => {
   try {
     // Skip localhost/local IPs (can't geolocate)
-    if (!ip || 
-        ip === '::1' || 
-        ip === '127.0.0.1' || 
-        ip.startsWith('192.168.') || 
-        ip.startsWith('10.') ||
-        ip.startsWith('172.16.')) {
+    if (!ip ||
+      ip === '::1' ||
+      ip === '127.0.0.1' ||
+      ip.startsWith('192.168.') ||
+      ip.startsWith('10.') ||
+      ip.startsWith('172.16.')) {
       console.log('Skipping geolocation for local IP:', ip);
       return null;
     }
 
     // Extract real IP if behind proxy (x-forwarded-for can have multiple IPs)
-    const realIP = ip.split(',')[0].trim();
+    const realIP = ip?.split(',')[0]?.trim();
+    if (!realIP) return null; // ip missing হলে early return
 
     // Check cache first
     const cached = locationCache.get(realIP);
@@ -68,7 +69,9 @@ export const getLocationFromIP = async (ip: string): Promise<LocationData | null
     if (error.response?.status === 429) {
       console.warn('Rate limit exceeded for ip-api.com, checking cache...');
       // Return cached data if available, even if expired
-      const realIP = ip.split(',')[0].trim();
+      const realIP = ip?.split(',')[0]?.trim();
+      if (!realIP) return null; // ip missing হলে early return
+      
       const cached = locationCache.get(realIP);
       if (cached) {
         console.log('Returning expired cache due to rate limit');

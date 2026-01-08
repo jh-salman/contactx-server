@@ -9,10 +9,13 @@ import { publicCardRoutes } from "./modules/publicCard/publicCard.routes";
 import { scanRoutes } from "./modules/analytics/scan.routes";
 import { contactRoutes } from "./modules/contacts/contacts.routes";
 import { notFoundRoute } from "./middlewere/notFoundRoute";
+import morgan from "morgan";
 
 
 export const app:Application= express();
 app.use(express.json());
+
+app.use(morgan("dev"));
 
 // আপনার backend এ (app.ts বা server.ts)
 app.use(cors({

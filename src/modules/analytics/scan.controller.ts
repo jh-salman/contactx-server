@@ -1,7 +1,7 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { scanServices } from "./scan.services";
 
-const trackScanController = async (req: Request, res: Response, next: any) => {
+const trackScanController = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { cardId } = req.params;
 
@@ -9,18 +9,18 @@ const trackScanController = async (req: Request, res: Response, next: any) => {
       return res.status(400).json({ success: false, message: "Card ID is required" });
     }
 
-    // Get IP address (handle proxy/load balancer)
-    const ip = req.ip || 
-               (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-               req.socket.remoteAddress ||
-               '';
+    // 1️⃣ Get IP address (handle proxy/load balancer)
+    const ip =
+      req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || // behind proxy
+      req.socket.remoteAddress || // direct connection
+      req.ip || // fallback
+      null;
 
-    // Request meta info
+    // 2️⃣ Collect meta info
     const meta = {
-      ip: ip,
-      userAgent: req.headers['user-agent'] || undefined,
+      ip: ip ?? undefined,
+      userAgent: req.headers["user-agent"]?.toString(),
       source: req.query.source === "link" ? "link" : "qr",
-      // Extract location from query parameters if provided (optional)
       latitude: req.query.latitude ? parseFloat(req.query.latitude as string) : undefined,
       longitude: req.query.longitude ? parseFloat(req.query.longitude as string) : undefined,
       city: req.query.city as string | undefined,
@@ -35,16 +35,21 @@ const trackScanController = async (req: Request, res: Response, next: any) => {
       country?: string;
     };
 
-    // Scan track + card fetch (location will be auto-detected from IP if not provided)
+    // 3️⃣ Track scan + fetch card
     const card = await scanServices.trackScanAndFetchCard(cardId, meta);
 
+    // 4️⃣ Send response
     res.status(200).json({
       success: true,
-      message: "Scan tracked successfully",
+      message: card.message || "Scan tracked successfully",
       data: card,
     });
   } catch (error: any) {
-    next(error);
+    console.error("Scan tracking error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
   }
 };
 

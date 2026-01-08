@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/prisma";
-import { getLocationFromIP } from "../../lib/ipGeolocation"; // Add this import
+import { getLocationFromIP } from "../../lib/ipGeolocation";
 
 export const trackScanAndFetchCard = async (
   cardId: string,
@@ -14,11 +14,9 @@ export const trackScanAndFetchCard = async (
   }
 ) => {
   // 1️⃣ Guard: cardId required
-  if (!cardId) {
-    throw new Error("cardId is required");
-  }
+  if (!cardId) throw new Error("cardId is required");
 
-  // 2️⃣ Check card exists first
+  // 2️⃣ Fetch card
   const card = await prisma.card.findUnique({
     where: { id: cardId },
     include: {
@@ -27,31 +25,31 @@ export const trackScanAndFetchCard = async (
     },
   });
 
-  if (!card) {
-    throw new Error("Card not found");
-  }
+  if (!card) throw new Error("Card not found");
 
-  // 3️⃣ Get location from IP if not provided and IP exists
+  // 3️⃣ Resolve location (IP-based if not provided)
   let finalMeta = { ...meta };
-  
-  if (meta.ip && (!meta.latitude || !meta.city)) {
-    // Only fetch from IP if location not already provided
-    const ipLocation = await getLocationFromIP(meta.ip);
-    
-    if (ipLocation) {
-      // Use IP location if available, but prefer provided location
-      finalMeta = {
-        ...meta,
-        latitude: meta.latitude ?? ipLocation.latitude,
-        longitude: meta.longitude ?? ipLocation.longitude,
-        city: meta.city ?? ipLocation.city,
-        country: meta.country ?? ipLocation.country,
-      };
+
+  if (!meta.latitude || !meta.longitude || !meta.city) {
+    if (meta.ip) {
+      const ipLocation = await getLocationFromIP(meta.ip);
+      if (ipLocation) {
+        finalMeta.latitude = finalMeta.latitude ?? ipLocation.latitude;
+        finalMeta.longitude = finalMeta.longitude ?? ipLocation.longitude;
+        finalMeta.city = finalMeta.city ?? ipLocation.city;
+        finalMeta.country = finalMeta.country ?? ipLocation.country;
+      }
     }
   }
 
-  // 4️⃣ Track scan only if card exists
-  await prisma.cardScan.create({
+  // 4️⃣ Validate coordinates
+  if (finalMeta.latitude && (finalMeta.latitude < -90 || finalMeta.latitude > 90))
+    throw new Error("Invalid latitude");
+  if (finalMeta.longitude && (finalMeta.longitude < -180 || finalMeta.longitude > 180))
+    throw new Error("Invalid longitude");
+
+  // 5️⃣ Create new scan (always create, allow multiple scans)
+  const scan = await prisma.cardScan.create({
     data: {
       cardId: card.id,
       ip: finalMeta.ip ?? null,
@@ -64,8 +62,22 @@ export const trackScanAndFetchCard = async (
     },
   });
 
-  // 5️⃣ Return card for scan modal
-  return card;
+  // 6️⃣ Return card + scan info
+  return {
+    card,
+    cardScan: {
+      id: scan.id,
+      scannedAt: scan.createdAt,
+      ip: scan.ip,
+      userAgent: scan.userAgent,
+      source: scan.source,
+      latitude: scan.latitude,
+      longitude: scan.longitude,
+      city: scan.city,
+      country: scan.country,
+    },
+    message: "Scan tracked successfully",
+  };
 };
 
 export const scanServices = {
