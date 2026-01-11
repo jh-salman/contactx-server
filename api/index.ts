@@ -1,18 +1,7 @@
-import { app } from "../src/app.js";
-import { prisma } from "../src/lib/prisma.js";
+import { app } from "../src/app";
 
 // Vercel serverless function handler
-export default async function handler(req: any, res: any) {
-  // Ensure database connection for serverless
-  try {
-    // Check if already connected (for serverless, connections are reused)
-    await prisma.$connect();
-  } catch (error) {
-    console.error("Database connection error:", error);
-    // Don't fail the request if connection fails, let Express handle it
-  }
-
-  // Handle the request with Express app
-  return app(req, res);
-}
+// Express app can be directly exported - Vercel's @vercel/node will handle it
+// The app is already configured with all routes and middleware
+export default app;
 
