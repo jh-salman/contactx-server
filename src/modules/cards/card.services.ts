@@ -102,6 +102,7 @@ const updateCard = async (
             firstName: string;
             lastName: string;
             jobTitle: string;
+            phoneNumber: string;
         };
         socialLinks?: any[];
     }
