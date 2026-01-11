@@ -1,4 +1,4 @@
-import { Card } from "../../../generated/prisma/client";
+import { Card } from "../../../generated/prisma/client.js";
 import { prisma } from "../../lib/prisma";
 import { generateQRCode } from "../../lib/qr";
 // import { Card } from "@prisma/client";

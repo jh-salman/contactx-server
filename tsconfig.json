@@ -10,7 +10,7 @@
     // See also https://aka.ms/tsconfig/module
     "module": "ESNext",
     "target": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "types": [],
     // For nodejs:
     // "lib": ["esnext"],
