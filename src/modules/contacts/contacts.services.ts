@@ -1,6 +1,6 @@
 import { prisma } from "../../lib/prisma";
 
-const saveContact = async (
+export const saveContact = async (
     userId: string,
     cardId: string,
     data: {
@@ -21,24 +21,24 @@ const saveContact = async (
         country?: string;
     }
 ) => {
-    // 1️⃣ Basic guards
+    // 1️⃣ Guards
     if (!userId) throw new Error("Unauthorized");
     if (!cardId) throw new Error("cardId is required");
 
-    // 2️⃣ Card exists check
+    // 2️⃣ Check if card exists
     const card = await prisma.card.findUnique({
         where: { id: cardId },
         select: { id: true, userId: true },
     });
     if (!card) throw new Error("Card not found");
 
-    // 3️⃣ Owner self-save prevent
+    // 3️⃣ Prevent owner from saving own card
     if (card.userId === userId) throw new Error("You cannot save your own card");
 
-    // 4️⃣ Minimum identifier check
+    // 4️⃣ Minimum identifier
     if (!data.phone && !data.email) throw new Error("Phone or email is required to save contact");
 
-    // 5️⃣ Duplicate check (per user)
+    // 5️⃣ Check duplicates for this user
     const existing = await prisma.contact.findFirst({
         where: {
             userId,
@@ -49,7 +49,6 @@ const saveContact = async (
             ].filter(Boolean) as any[],
         },
     });
-
     if (existing) return { alreadySaved: true, contact: existing };
 
     // 6️⃣ Create contact
@@ -68,7 +67,6 @@ const saveContact = async (
             banner: data.banner ?? "",
             note: data.note ?? "",
             profile_img: data.profile_img ?? "",
-            // Use null instead of 0 for location fields (0 is a valid coordinate)
             latitude: data.latitude ?? null,
             longitude: data.longitude ?? null,
             city: data.city ?? "",
@@ -79,7 +77,7 @@ const saveContact = async (
     return { alreadySaved: false, contact };
 };
 
-const getAllContacts = async (userId: string) => {
+export const getAllContacts = async (userId: string) => {
     if (!userId) throw new Error("userId is required");
 
     const contacts = await prisma.contact.findMany({
@@ -87,11 +85,10 @@ const getAllContacts = async (userId: string) => {
         orderBy: { createdAt: "desc" },
     });
 
-    // Return empty array if no contacts found (this is a valid state)
     return contacts || [];
 };
 
-const updateContact = async (
+export const updateContact = async (
     contactId: string,
     userId: string,
     data: Partial<{
@@ -118,14 +115,10 @@ const updateContact = async (
 
     if (!existing) throw new Error("Contact not found or unauthorized");
 
-    if (!data || Object.keys(data).length === 0) {
-        // কোনো update করা হবে না, শুধু existing contact return
-        return existing;
-    }
+    if (!data || Object.keys(data).length === 0) return existing;
 
-    // Prepare update data - only include fields that are provided
     const updateData: any = {};
-    
+
     if (data.firstName !== undefined) updateData.firstName = data.firstName;
     if (data.lastName !== undefined) updateData.lastName = data.lastName;
     if (data.phone !== undefined) updateData.phone = data.phone;
@@ -137,8 +130,6 @@ const updateContact = async (
     if (data.banner !== undefined) updateData.banner = data.banner;
     if (data.note !== undefined) updateData.note = data.note;
     if (data.profile_img !== undefined) updateData.profile_img = data.profile_img;
-    
-    // Handle location fields - allow null values
     if (data.latitude !== undefined) updateData.latitude = data.latitude;
     if (data.longitude !== undefined) updateData.longitude = data.longitude;
     if (data.city !== undefined) updateData.city = data.city;
@@ -150,28 +141,15 @@ const updateContact = async (
     });
 };
 
-const deleteContact = async (contactId: string, userId: string) => {
-    if (!contactId) {
-        throw new Error("contactId is required");
-    }
+export const deleteContact = async (contactId: string, userId: string) => {
+    if (!contactId) throw new Error("contactId is required");
+    if (!userId) throw new Error("Unauthorized");
 
-    if (!userId) {
-        throw new Error("Unauthorized");
-    }
-
-    // 1️⃣ Check exists + ownership
     const contact = await prisma.contact.findFirst({
-        where: {
-            id: contactId,
-            userId,
-        },
+        where: { id: contactId, userId },
         select: { id: true },
     });
 
-    // 🔐 This covers:
-    // - wrong id
-    // - already deleted id
-    // - other user's contact
     if (!contact) {
         return {
             success: false,
@@ -179,10 +157,7 @@ const deleteContact = async (contactId: string, userId: string) => {
         };
     }
 
-    // 2️⃣ Delete
-    await prisma.contact.delete({
-        where: { id: contactId },
-    });
+    await prisma.contact.delete({ where: { id: contactId } });
 
     return {
         success: true,
@@ -190,9 +165,9 @@ const deleteContact = async (contactId: string, userId: string) => {
     };
 };
 
-export const contactServices = { 
-    saveContact, 
-    getAllContacts, 
-    updateContact, 
-    deleteContact 
+export const contactServices = {
+    saveContact,
+    getAllContacts,
+    updateContact,
+    deleteContact,
 };

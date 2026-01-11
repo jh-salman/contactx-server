@@ -14,6 +14,7 @@ const createCard = async (
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
     const userId = req.user?.id
+    console.log(userId)
     const {
       cardTitle,
       cardColor,

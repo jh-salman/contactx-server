@@ -12,7 +12,7 @@ const createCard = async (
     cover?: string,
     imagesAndLayouts?: any,
     isFavorite?: boolean,
-    personalInfo?: { firstName: string; lastName: string; jobTitle: string },
+    personalInfo?: { firstName: string; lastName: string; jobTitle: string, phoneNumber:string } ,
     socialLinks?: any[]
 ) => {
     if (!userId) throw new Error("userId is required");

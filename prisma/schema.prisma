@@ -116,6 +116,8 @@ model personalInfo {
   firstName String
   lastName  String
   jobTitle  String
+  phoneNumber String
+  email     String?
 
   @@index([cardId])
   @@map("personal_info")
