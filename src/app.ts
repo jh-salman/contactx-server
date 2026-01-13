@@ -17,64 +17,23 @@ app.use(express.json());
 
 app.use(morgan("dev"));
 
-// CORS configuration - allow Vercel and local development
-const allowedOrigins = process.env.CORS_ORIGINS 
-  ? process.env.CORS_ORIGINS.split(',')
-  : [
-      'http://localhost:8081', 
-      'exp://10.26.38.18:8081', 
-      'http://10.26.38.18:3004',
-      'http://localhost:3004'
-    ];
 
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // Check if origin is in allowed list
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      // For Vercel deployments, allow any origin from the same domain
-      if (process.env.VERCEL && process.env.VERCEL_URL && origin.includes(process.env.VERCEL_URL)) {
-        callback(null, true);
-      } else {
-        callback(null, true); // Allow all for now - restrict in production
-      }
-    }
-  },
+ origin: [
+    'http://localhost:8081', 
+    'exp://10.23.61.18:8081',  // ✅ New IP
+    'http://10.23.61.18:3004',  // ✅ New IP
+    'http://localhost:3004'
+  ],
   credentials: true
 }));
 
-// Add middleware to normalize and log origin headers for debugging
-app.use('/api/auth', (req, res, next) => {
-    const origin = req.headers.origin || req.headers['x-origin'] || req.headers.referer;
-    
-    // Normalize origin header - ensure it matches trusted origins format
-    if (origin && typeof origin === 'string') {
-        // Remove trailing slash if present
-        const normalizedOrigin = origin.replace(/\/$/, '');
-        // Set normalized origin back to headers
-        req.headers.origin = normalizedOrigin;
-    }
-    
-    const originStr = typeof origin === 'string' ? origin : Array.isArray(origin) ? origin[0] : null;
-    console.log('🔍 Auth Request Origin:', {
-        'original-origin': req.headers.origin,
-        'normalized-origin': originStr ? originStr.replace(/\/$/, '') : null,
-        'x-origin': req.headers['x-origin'],
-        referer: req.headers.referer,
-        'user-agent': req.headers['user-agent'],
-        url: req.url,
-    });
-    next();
-});
 
 app.all('/api/auth/*splat', toNodeHandler(auth));
 
 
 app.get("/", (req:Request, res:Response )=>{
+  
     res.send("Hello world")
 
 })

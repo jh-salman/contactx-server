@@ -1,4 +1,4 @@
-// import { betterAuth } from "better-auth/*";
+import { betterAuth } from "better-auth/*";
 import dotenv from "dotenv";
 import path from "path";
 import { auth } from "../lib/auth";

@@ -6,10 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "prisma generate && tsc",
-    "postinstall": "prisma generate"
+    "build": "tsc"
   },
-  
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jh-salman/contactx-server.git"

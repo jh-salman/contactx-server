@@ -1,20 +1,10 @@
-import { app } from "./app";
-import { config } from "./config";
-import { prisma } from "./lib/prisma"
+import { app } from './app';
 
-async function main() {
-    try {
-        await prisma.$connect();
-        console.log("Connected to database");
+const PORT = Number(process.env.PORT) || 3004; // ✅ Convert to number
+const HOST = '0.0.0.0'; // ✅ Bind to all interfaces
 
-        app.listen(config.port, ()=>{
-            console.log(`Server is running on port ${config.port}`)
-        })
-        
-    } catch (error) {
-        console.log(error)
-        await prisma.$disconnect();
-        process.exit(1);
-    }
-}
-main();
+app.listen(PORT, HOST, () => {
+  console.log(`Server is running on http://${HOST}:${PORT}`);
+  console.log(`Local access: http://localhost:${PORT}`);
+  console.log(`Network access: http://10.102.144.18:${PORT}`);
+});
