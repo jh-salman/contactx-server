@@ -5,15 +5,10 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-<<<<<<< HEAD
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc"
-=======
     "build": "tsc && prisma generate",
     "start": "node dist/server.js",
     "postinstall": "prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1"
->>>>>>> features/scan-contact
   },
   "repository": {
     "type": "git",
