@@ -35,9 +35,6 @@
     "api/index.ts": {
       "maxDuration": 30
     }
-  },
-  "env": {
-    "NODE_ENV": "production"
   }
 }
 >>>>>>> features/scan-contact
