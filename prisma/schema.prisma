@@ -18,8 +18,10 @@ model User {
   image         String?
   cards         Card[]
   contacts      Contact[]
-  sentRequests  PermissionRequest[] @relation("SentRequests")
-  receivedRequests PermissionRequest[] @relation("ReceivedRequests")
+  ownerShares      VisitorContactShare[] @relation("OwnerShares")
+  visitorShares    VisitorContactShare[] @relation("VisitorShares")
+  sentRequests     ContactRequest[]      @relation("SentRequests")
+  receivedRequests ContactRequest[]      @relation("ReceivedRequests")
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -28,11 +30,6 @@ model User {
 
   phoneNumber         String?
   phoneNumberVerified Boolean?
-
-  ownerShares      VisitorContactShare[] @relation("OwnerShares")
-  visitorShares    VisitorContactShare[] @relation("VisitorShares")
-  sentRequests     ContactRequest[]      @relation("SentRequests")
-  receivedRequests ContactRequest[]      @relation("ReceivedRequests")
 
   @@unique([email])
   @@unique([phoneNumber])
@@ -104,12 +101,10 @@ model Card {
   qrImage          String?
   scan             cardScan[]
   contacts         Contact[]
-  permissionRequests PermissionRequest[]
-  setting          Json?
-
+  contactRequests   ContactRequest[]
   ownerCardShares   VisitorContactShare[] @relation("OwnerCardShares")
   visitorCardShares VisitorContactShare[] @relation("VisitorCardShares")
-  contactRequests   ContactRequest[]
+  setting          Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -118,17 +113,6 @@ model Card {
   @@map("cards")
 }
 
-<<<<<<< HEAD
-model personalInfo {
-  id          String  @id @default(cuid())
-  cardId      String  @unique
-  card        Card    @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  firstName   String
-  lastName    String
-  jobTitle    String
-  phoneNumber String
-  email       String?
-=======
 model PersonalInfo {
   id          String  @id @default(cuid())
   cardId      String  @unique
@@ -144,7 +128,6 @@ model PersonalInfo {
   note        String?
   banner      String?
   profile_img String?
->>>>>>> features/scan-contact
 
   @@index([cardId])
   @@map("personal_info")
@@ -180,7 +163,6 @@ model cardScan {
   @@map("card_scans")
 }
 
-// ✅ Fixed: Added @@map and made optional fields nullable
 model Contact {
   id          String   @id @default(uuid())
   userId      String
@@ -188,42 +170,30 @@ model Contact {
   firstName   String
   lastName    String
   phone       String
-<<<<<<< HEAD
-  email       String?  // ✅ Made optional
-  company     String?  // ✅ Made optional
-  jobTitle    String?  // ✅ Made optional
-  image       String?  // ✅ Made optional
-  logo        String?  // ✅ Made optional
-  banner      String?  // ✅ Made optional
-  note        String?  // ✅ Made optional
-  profile_img String?  // ✅ Made optional
-  latitude    Float?
-  longitude   Float?
-  city        String?  // ✅ Made optional
-  country     String?  // ✅ Made optional
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-=======
   email       String?
   company     String?
   jobTitle    String?
-
+  image       String?
   logo        String?
+  banner      String?
   note        String?
-
   profile_img String?
->>>>>>> features/scan-contact
+  latitude    Float?
+  longitude   Float?
+  city        String?
+  country     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([userId])
   @@index([cardId])
-  @@map("contacts") // ✅ Added missing @@map
+  @@map("contacts")
 }
 
-<<<<<<< HEAD
-// ✅ Fixed: Added @@map directive
 model VisitorContactShare {
   id            String   @id @default(uuid())
   ownerCardId   String
@@ -249,10 +219,9 @@ model VisitorContactShare {
   @@index([ownerCardId])
   @@index([visitorCardId])
   @@index([status])
-  @@map("visitor_contact_shares") // ✅ Added missing @@map
+  @@map("visitor_contact_shares")
 }
 
-// ✅ Fixed: Added @@map directive
 model ContactRequest {
   id          String   @id @default(uuid())
   cardId      String
@@ -272,27 +241,5 @@ model ContactRequest {
   @@index([requestedTo])
   @@index([cardId])
   @@index([status])
-  @@map("contact_requests") // ✅ Added missing @@map
+  @@map("contact_requests")
 }
-=======
-model PermissionRequest {
-  id          String   @id @default(cuid())
-  requesterId String   // Owner who wants to save contact
-  requester   User     @relation("SentRequests", fields: [requesterId], references: [id], onDelete: Cascade)
-  cardId      String   // Customer's card
-  card        Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  cardOwnerId String   // Customer (card owner)
-  cardOwner   User     @relation("ReceivedRequests", fields: [cardOwnerId], references: [id], onDelete: Cascade)
-  status      String   @default("pending") // "pending" | "approved" | "rejected"
-  message     String?  // Optional message from requester
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([requesterId])
-  @@index([cardOwnerId])
-  @@index([cardId])
-  @@index([status])
-  @@map("permission_requests")
-}
->>>>>>> features/scan-contact
