@@ -19,13 +19,17 @@ const getTrustedOrigins = (): string[] => {
             : [envOrigins.trim()];
     } else {
         // Default origins for development - include all possible variations
-        // If AUTH_TRUSTED_ORIGINS is not set in .env, use these defaults
         origins = [
             "http://localhost:3000",
             "http://localhost:3004",
             "http://127.0.0.1:3004",
             "http://10.26.38.18:3004", // Mobile app origin (update IP if it changes)
-        ];
+            // Add Vercel URL if available
+            process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+            process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : null,
+            process.env.BETTER_AUTH_URL,
+            process.env.FRONTEND_URL,
+        ].filter(Boolean) as string[];
     }
     
     // Log trusted origins for debugging
@@ -36,11 +40,24 @@ const getTrustedOrigins = (): string[] => {
 
 const trustedOriginsList = getTrustedOrigins();
 
+// Get base URL for Better Auth
+const getBaseURL = (): string => {
+    if (process.env.BETTER_AUTH_URL) {
+        return process.env.BETTER_AUTH_URL;
+    }
+    // Vercel URL (with https:// prefix)
+    if (process.env.VERCEL_URL) {
+        return `https://${process.env.VERCEL_URL}`;
+    }
+    if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+        return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+    }
+    return 'http://localhost:3004';
+};
+
 export const auth = betterAuth({
     trustedOrigins: trustedOriginsList,
-    // For development, you can also try disabling origin check entirely
-    // But this is NOT recommended for production
-    // ...(process.env.NODE_ENV === 'development' ? { disableOriginCheck: true } : {}), // Uncomment if needed
+    baseURL: getBaseURL(),
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),

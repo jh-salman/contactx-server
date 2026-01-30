@@ -12,14 +12,34 @@ import { globalErrorHandler } from "./middlewere/globalErrorHandler";
 
 export const app = express();
 
-app.use(express.json());
+// Increase JSON payload limit for Vercel
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// CORS Configuration - supports both development and production
+const allowedOrigins = [
+  "http://localhost:3004",
+  "http://localhost:3000",
+  "http://localhost:8081",
+  // Vercel production URL (will be set via env)
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+  process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : null,
+  process.env.FRONTEND_URL,
+  process.env.EXPO_APP_URL,
+].filter(Boolean) as string[];
 
 app.use(cors({
-  origin: [
-    "http://localhost:3004",
-    "http://localhost:3000",
-    "https://contactx-server-gnia74tg8-jhsalmans-projects.vercel.app"
-  ],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 

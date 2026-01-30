@@ -1,12 +1,20 @@
 import "dotenv/config";
 import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '../../generated/prisma/client';
 
+const connectionString = process.env.DATABASE_URL;
 
-import { PrismaClient } from '../../generated/prisma/client'
+if (!connectionString) {
+  throw new Error('DATABASE_URL environment variable is not set');
+}
 
-const connectionString = `${process.env.DATABASE_URL}`
+const adapter = new PrismaPg({ connectionString });
+const prisma = new PrismaClient({ adapter });
 
-const adapter = new PrismaPg({ connectionString })
-const prisma = new PrismaClient({ adapter })
+// Handle Prisma connection cleanup for serverless environments
+if (process.env.NODE_ENV === 'production') {
+  // In serverless environments, connections are reused
+  // No need to disconnect on each request
+}
 
-export { prisma }
+export { prisma };
