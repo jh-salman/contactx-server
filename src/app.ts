@@ -21,8 +21,10 @@ app.use(morgan("dev"));
 app.use(cors({
  origin: [
     'http://localhost:8081', 
-    'exp://10.23.61.18:8081',  // ✅ New IP
-    'http://10.23.61.18:3004',  // ✅ New IP
+    'exp://10.23.61.18:8081',  // Old IP
+    'exp://10.102.144.18:8081',  // ✅ NEW - Add this
+    'http://10.23.61.18:3004',  // Old IP
+    'http://10.102.144.18:3004',  // ✅ NEW - Add this
     'http://localhost:3004'
   ],
   credentials: true
